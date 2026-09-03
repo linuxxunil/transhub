@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 300px; margin: 0; padding: 14px; font: 13px/1.6 -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif; color: #222; }
+    h1 { font-size: 15px; margin: 0 0 10px; }
+    .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    select { padding: 3px 6px; }
+    .usage { margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+    .u-row { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+    .u-name { color: #374151; }
+    .u-quota { color: #6b7280; }
+    .u-quota.exceeded { color: #c0392b; }
+    .u-calls { font-size: 11px; color: #9ca3af; text-align: right; margin: -1px 0 4px; }
+    .nokey { color: #b45309; font-size: 11px; margin-left: 6px; }
+    a { color: #2563eb; text-decoration: none; }
+    .hint { font-size: 11px; color: #8a8f99; margin-top: 10px; }
+    .ok { color: #16a34a; }
+    .off { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <h1>TransHub</h1>
+  <div class="row">
+    <label><input type="checkbox" id="enabled"> 啟用翻譯</label>
+  </div>
+  <div class="row">
+    <span>來源語言</span>
+    <select id="sourceLang">
+      <option value="auto">自動檢測</option>
+      <option value="en">英語</option>
+      <option value="ja">日語</option>
+      <option value="ko">韓語</option>
+    </select>
+  </div>
+  <div class="row">
+    <span>目標語言</span>
+    <select id="targetLang">
+      <option value="zh-TW">繁體中文</option>
+      <option value="zh">簡體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+    </select>
+  </div>
+  <div class="usage" id="usage"></div>
+  <div class="hint">
+    雙擊單詞翻譯；Alt/⌘+點擊翻譯句子；選中文字後連按兩次 T 翻譯。<br>
+    <a href="options.html" target="_blank">打開完整設置（API Key、額度、快速鍵）</a>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

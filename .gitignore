@@ -1,0 +1,5 @@
+# 打包產物
+dist/
+
+# macOS
+.DS_Store
