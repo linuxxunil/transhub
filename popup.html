@@ -44,10 +44,15 @@
     </select>
   </div>
   <div class="usage" id="usage"></div>
+  <div class="row" style="margin-top:10px">
+    <button id="openPdf" style="width:100%;padding:6px 8px;border:1px solid #2563eb;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer">翻譯 PDF（當前分頁是 PDF 將直接載入，否則可選本機檔案）</button>
+  </div>
   <div class="hint">
-    雙擊單詞翻譯；Alt/⌘+點擊翻譯句子；選中文字後連按兩次 T 翻譯。<br>
+    選中文字後連按兩次 T 翻譯；可在設置中開啟雙擊觸發。<br>
+    PDF 點上方按鈕在 TransHub 檢視器開啟後劃詞翻譯。<br>
     <a href="options.html" target="_blank">打開完整設置（API Key、額度、快速鍵）</a>
   </div>
+  <script src="lib/pdf-src.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

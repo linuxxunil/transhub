@@ -53,8 +53,10 @@
         <option value="ja">日本語</option>
       </select>
     </div>
+    <div class="row"><label><input type="checkbox" id="dblclick-enabled"> 雙擊觸發翻譯（雙擊單詞或已選取文字）</label></div>
     <div class="row"><label><input type="checkbox" id="hotkey-enabled"> 啟用快速鍵（選中文字後連按兩次翻譯）</label></div>
-    <div class="row"><label>快速鍵</label><input type="text" id="hotkey-key" maxlength="1" style="width:60px"><span class="tip">單個字母或數字，默認 t，輸入框內不會觸發</span></div>
+    <div class="row"><label>快速鍵</label><input type="text" id="hotkey-key" maxlength="1" style="width:60px"><span class="tip">單個字母或數字，預設 t，輸入框內不會觸發</span></div>
+    <div class="row"><span class="tip" style="margin-left:136px">翻譯句子：先選取句子，再用雙擊或快速鍵觸發；關閉時不會誤觸。</span></div>
     <div class="row"><button class="primary" id="saveBasic">保存基本設置</button><span class="status" id="basicStatus"></span></div>
   </div>
 

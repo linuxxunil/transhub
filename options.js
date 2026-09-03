@@ -100,6 +100,7 @@ function moveProvider(pid, dir) {
 
 function fillBasic() {
   $('enabled').checked = settings.enabled;
+  $('dblclick-enabled').checked = !!settings.dblclickEnabled;
   $('sourceLang').value = settings.sourceLang;
   $('targetLang').value = settings.targetLang;
   var hk = settings.hotkey || { enabled: true, key: 't' };
@@ -139,6 +140,7 @@ function showStatus(id, ok, text) {
 
 $('saveBasic').addEventListener('click', function () {
   settings.enabled = $('enabled').checked;
+  settings.dblclickEnabled = $('dblclick-enabled').checked;
   settings.sourceLang = $('sourceLang').value;
   settings.targetLang = $('targetLang').value;
   var hk = settings.hotkey || (settings.hotkey = {});

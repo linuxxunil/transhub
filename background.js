@@ -1,6 +1,6 @@
 'use strict';
 
-importScripts('lib/md5.js', 'lib/providers.js');
+importScripts('lib/md5.js', 'lib/providers.js', 'lib/pdf-src.js');
 
 var PROVIDER_ORDER = ['tencent', 'alibaba', 'baidu', 'youdao'];
 var HISTORY_MAX = 1000;
@@ -10,6 +10,7 @@ var QUOTA_ERROR_RE = /免費額度|免费额度|額度已用|额度已用|額度
 
 var DEFAULTS = {
   enabled: true,
+  dblclickEnabled: false,
   sourceLang: 'auto',
   targetLang: 'zh-TW',
   hotkey: { enabled: true, key: 't', windowMs: 600 },
@@ -47,6 +48,13 @@ function dayKey() {
 
 var NON_PERSISTED_PROVIDER_FIELDS = { monthlyLimit: 1, dailyLimit: 1 };
 
+var SECRET_FIELDS = {
+  tencent: ['secretId', 'secretKey'],
+  alibaba: ['accessKeyId', 'accessKeySecret'],
+  baidu: ['appid', 'key'],
+  youdao: ['appKey', 'appSecret']
+};
+
 function normalizeOrder(order) {
   var out = [];
   (order || []).forEach(function (id) {
@@ -58,34 +66,74 @@ function normalizeOrder(order) {
   return out;
 }
 
+function mergeSettings(s) {
+  if (!s) return structuredClone(DEFAULTS);
+  var merged = structuredClone(DEFAULTS);
+  Object.keys(s).forEach(function (k) {
+    if (k === 'providers') return;
+    merged[k] = s[k];
+  });
+  var savedProviders = s.providers || {};
+  for (var p in DEFAULTS.providers) {
+    var clean = {};
+    var saved = savedProviders[p] || {};
+    Object.keys(saved).forEach(function (f) {
+      if (NON_PERSISTED_PROVIDER_FIELDS[f]) return;
+      clean[f] = saved[f];
+    });
+    merged.providers[p] = Object.assign({}, DEFAULTS.providers[p], clean);
+  }
+  merged.providerOrder = normalizeOrder(s.providerOrder || (s.providers ? Object.keys(savedProviders) : null));
+  merged.usage = s.usage || {};
+  merged.disabledProviders = s.disabledProviders || {};
+  return merged;
+}
+
+function splitSecrets(merged) {
+  var settingsOut = structuredClone(merged);
+  var secretsOut = {};
+  for (var p in SECRET_FIELDS) {
+    secretsOut[p] = {};
+    SECRET_FIELDS[p].forEach(function (f) {
+      var v = settingsOut.providers[p] ? settingsOut.providers[p][f] : '';
+      secretsOut[p][f] = typeof v === 'string' ? v : '';
+      if (settingsOut.providers[p]) delete settingsOut.providers[p][f];
+    });
+  }
+  return { settings: settingsOut, secrets: secretsOut };
+}
+
+function persistSplit(merged) {
+  var parts = splitSecrets(merged);
+  return chrome.storage.local.set({ settings: parts.settings, secrets: parts.secrets });
+}
+
 function getSettings() {
-  return chrome.storage.local.get({ settings: null }).then(function (res) {
-    var s = res.settings;
-    if (!s) return structuredClone(DEFAULTS);
-    var merged = structuredClone(DEFAULTS);
-    for (var k in s) {
-      if (k === 'providers') continue;
-      merged[k] = s[k];
+  return chrome.storage.local.get({ settings: null, secrets: null }).then(function (res) {
+    var merged = mergeSettings(res.settings);
+    var savedSecrets = res.secrets || {};
+    var legacy = (res.settings && res.settings.providers) || {};
+    var needMigration = false;
+    for (var p in SECRET_FIELDS) {
+      var sec = savedSecrets[p] || {};
+      SECRET_FIELDS[p].forEach(function (f) {
+        if (typeof sec[f] === 'string' && sec[f]) {
+          merged.providers[p][f] = sec[f];
+        } else if (legacy[p] && typeof legacy[p][f] === 'string' && legacy[p][f]) {
+          merged.providers[p][f] = legacy[p][f];
+          needMigration = true;
+        }
+      });
     }
-    var savedProviders = s.providers || {};
-    for (var p in DEFAULTS.providers) {
-      var clean = {};
-      var saved = savedProviders[p] || {};
-      for (var f in saved) {
-        if (NON_PERSISTED_PROVIDER_FIELDS[f]) continue;
-        clean[f] = saved[f];
-      }
-      merged.providers[p] = Object.assign({}, DEFAULTS.providers[p], clean);
+    if (needMigration) {
+      return persistSplit(merged).then(function () { return merged; });
     }
-    merged.providerOrder = normalizeOrder(s.providerOrder || (s.providers ? Object.keys(savedProviders) : null));
-    merged.usage = s.usage || {};
-    merged.disabledProviders = s.disabledProviders || {};
     return merged;
   });
 }
 
 function saveSettings(settings) {
-  return chrome.storage.local.set({ settings: settings });
+  return persistSplit(settings);
 }
 
 function recordUsage(settings, providerId, chars) {
@@ -164,9 +212,12 @@ function translateWithProvider(id, text, source, target, settings) {
   });
 }
 
+var TEXT_MAX = 5000;
+
 function translate(text, source, target) {
   text = (text || '').trim();
   if (!text) return Promise.resolve({ ok: false, error: '沒有選中文字' });
+  if (text.length > TEXT_MAX) text = text.slice(0, TEXT_MAX);
   var cacheKey = source + '>' + target + '>' + text;
   if (cache.has(cacheKey)) {
     var c = cache.get(cacheKey);
@@ -186,7 +237,9 @@ function translate(text, source, target) {
           errors.push(TranslationProviders[id].name + '：額度已用盡或已停用');
           return Promise.reject(null);
         }
-        return translateWithProvider(id, text, src, tgt, settings).catch(function (err) {
+        return Promise.resolve().then(function () {
+          return translateWithProvider(id, text, src, tgt, settings);
+        }).catch(function (err) {
           var msg = err && err.message ? err.message : String(err);
           if (QUOTA_ERROR_RE.test(msg)) {
             markQuotaError(settings, id);
@@ -237,16 +290,28 @@ chrome.runtime.onInstalled.addListener(function () {
     title: '翻譯選中文字',
     contexts: ['selection']
   });
+  chrome.contextMenus.create({
+    id: 'translate-pdf-link',
+    title: '用 TransHub 翻譯此 PDF',
+    contexts: ['link']
+  });
   getSettings().then(saveSettings);
 });
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   if (info.menuItemId === 'translate-selection' && tab && tab.id) {
     chrome.tabs.sendMessage(tab.id, { type: 'translate-selection' }).catch(function () {});
+  } else if (info.menuItemId === 'translate-pdf-link' && info.linkUrl) {
+    var src = TransHubPdfSrc.resolvePdfSource(info.linkUrl);
+    if (src) chrome.tabs.create({ url: chrome.runtime.getURL('pdf-viewer.html') + '?src=' + encodeURIComponent(src) });
   }
 });
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+  if (sender.id !== chrome.runtime.id) {
+    sendResponse({ ok: false, error: '未授權的訊息來源' });
+    return false;
+  }
   var responded = false;
   function respond(payload) {
     if (responded) return;
@@ -307,3 +372,5 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   });
   return true;
 });
+
+getSettings().catch(function () {});

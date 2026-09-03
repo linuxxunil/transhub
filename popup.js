@@ -85,3 +85,16 @@ $('targetLang').addEventListener('change', function () {
     chrome.runtime.sendMessage({ type: 'save-settings', settings: res.settings });
   });
 });
+
+$('openPdf').addEventListener('click', function () {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tab = tabs && tabs[0];
+    var url = tab && tab.url || '';
+    var viewerUrl = chrome.runtime.getURL('pdf-viewer.html');
+    if (globalThis.TransHubPdfSrc && TransHubPdfSrc.isPdfUrl(url)) {
+      viewerUrl += '?src=' + encodeURIComponent(url);
+    }
+    chrome.tabs.create({ url: viewerUrl });
+    window.close();
+  });
+});

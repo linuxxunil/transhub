@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>TransHub PDF 翻譯</title>
+  <style>
+    body { margin: 0; font: 14px/1.7 -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif; color: #222; background: #525659; }
+    header { position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000; display: flex; align-items: center; gap: 10px;
+             padding: 8px 14px; background: #ffffff; border-bottom: 1px solid #d0d4dc; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    header h1 { font-size: 14px; margin: 0; }
+    header .spacer { flex: 1; }
+    header button { padding: 5px 14px; border: 1px solid #d0d4dc; border-radius: 6px; background: #fff; cursor: pointer; }
+    header button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    header button:hover { filter: brightness(0.97); }
+    #pageInfo { font-size: 12px; color: #6b7280; }
+    #status { font-size: 12px; color: #c0392b; max-width: 520px; }
+    #viewer { padding: 56px 0 40px; }
+    .pageWrap { position: relative; margin: 0 auto 14px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+    .pageWrap canvas { display: block; }
+    /* PDF.js 文字層：供選取翻譯（文字透明疊在 canvas 上） */
+    .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-align: initial; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; }
+    .textLayer span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+    .textLayer ::selection { background: rgba(37, 99, 235, 0.25); }
+    .empty { margin: 120px auto; max-width: 560px; background: #fff; border-radius: 12px; padding: 26px 30px; text-align: center; }
+    .empty h2 { margin: 0 0 10px; font-size: 16px; }
+    .empty p { color: #6b7280; font-size: 13px; margin: 6px 0; }
+    .empty button { margin-top: 10px; padding: 7px 20px; border: 1px solid #2563eb; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TransHub PDF 翻譯</h1>
+    <span id="pageInfo"></span>
+    <div class="spacer"></div>
+    <span id="status"></span>
+    <button class="primary" id="openLocal">選擇本機檔案</button>
+    <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden>
+  </header>
+  <main id="viewer">
+    <div class="empty" id="emptyHint">
+      <h2>翻譯 PDF 文檔</h2>
+      <p>選擇本機 PDF 檔案後，雙擊單詞或選取句子即可即時翻譯（與網頁劃詞相同體驗）。</p>
+      <p>觸發方式沿用設置頁設定：連按兩次快速鍵（預設 T）、或開啟「雙擊觸發翻譯」。</p>
+      <button class="primary" id="openLocal2">選擇本機檔案</button>
+    </div>
+  </main>
+  <script src="lib/pdfjs/pdf.min.js"></script>
+  <script src="lib/pdf-src.js"></script>
+  <script src="lib/selection-card.js"></script>
+  <script src="pdf-viewer.js"></script>
+</body>
+</html>

@@ -13,9 +13,11 @@ zip -X -r "$OUT" \
   manifest.json \
   background.js \
   content.js \
+  pdf-viewer.html pdf-viewer.js \
   popup.html popup.js \
   options.html options.js \
-  lib/md5.js lib/providers.js \
+  lib/md5.js lib/providers.js lib/selection-card.js lib/pdf-src.js \
+  lib/pdfjs/pdf.min.js lib/pdfjs/pdf.worker.min.js \
   icons/icon16.png icons/icon48.png icons/icon128.png \
   -x '*.DS_Store' > /dev/null
 
