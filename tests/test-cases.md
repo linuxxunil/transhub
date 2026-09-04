@@ -65,6 +65,7 @@
 | TC-M21 | PDF | 變更雙擊開關/快速鍵設定後，檢視器內操作 | 即時生效（不需重開檢視器） |
 | TC-M22 | PDF | 網頁（content script）劃詞回歸：雙擊t、右鍵選單 | 行為與升級前一致（重構不變） |
 | TC-M23 | 防護 | 重新載入擴展後，於未重新整理的舊網頁分頁觸發翻譯 | 卡片顯示「擴展已更新，請重新整理此頁面」，console 無 Uncaught Error |
+| TC-M24 | 觸發 | ① 無反白時滑鼠停在單詞上按 tt；② 游標在空白處/圖片上按 tt；③ 反白後滑鼠移開按 tt | ① 翻譯游標處單詞（卡片錨定游標）；② 不觸發；③ 翻譯反白內容（滑鼠位置無關，單詞/句子均可） |
 
 ## 真實 API 聯通（由 test agent 視密鑰可用性執行）
 
@@ -91,10 +92,10 @@
 > - 結論：PASS / FAIL（失敗項與定位）
 > - 遺留事項：（無則寫「無」）
 
-### 2026-09-03 ｜ v0.3.2 ｜ 修復 Extension context invalidated 防護；PDF 按鈕整合為單顆智慧按鈕
+### 2026-09-03 ｜ v0.3.3 ｜ tt 無選取時後備翻譯游標處單詞（與雙擊行為對稱）
 - 執行者：test agent
-- 自動案例：node tests/run.js → 28/28 PASS（含新增 TC-A28 isPdfUrl 判定）；語法檢查（lib/selection-card.js、lib/pdf-src.js、popup.js、tests/run.js、content.js、background.js、pdf-viewer.js）＋manifest JSON＋版本 0.3.2 皆通過；另以臨時腳本（/tmp，用後即刪）動態模擬 context 失效 16/16 PASS：失效時 startTranslate 顯示「擴展已更新，請重新整理此頁面」且無 Uncaught Error、fav 顯示「請重新整理」、loadTriggerCfg/onChanged 靜默、sendMessage 競態失效經 catch 顯示提示、恢復有效後翻譯/lastError 行為不變
-- 手動案例：TC-M15~M23 待瀏覽器驗證（TC-M23 為重載擴展後舊分頁防護：卡片提示文案、console 無 Uncaught Error）；TC-M15 措辭同步單顆智慧按鈕 UI
-- 真實 API：TC-R01 en→zh-TW PASS（繁體「你好，世界，這是一個測試。」）；TC-R02 auto→zh-TW PASS（繁體「你好,世界,這是一次測試。」）；TC-R03 ja→zh-TW 預期 10005 PASS（服務端限制，不算失敗）
-- 結論：**PASS**——selection-card.js 五條 chrome.* 路徑（startTranslate 雙層、fav、loadTriggerCfg、onChanged listener、onMessage→startTranslate）均已防護，失效文案經 esc() 渲染；popup 單按鈕經 isPdfUrl 判定帶/不帶 ?src=，pdf-viewer 端 resolvePdfSource 白名單雙層防護不變
-- 遺留事項：無
+- 自動案例：node tests/run.js → 28/28 PASS；語法檢查（node --check lib/selection-card.js、tests/run.js）＋manifest JSON＋版本 0.3.3 皆通過
+- 手動案例：TC-M01~M24 **已由用戶於瀏覽器人工驗證 PASS**（含 TC-M24 本輪重點：① 無反白滑鼠停單詞按 tt → 譯游標處單詞且卡片錨定游標；② 游標在空白處/圖片按 tt → 不觸發；③ 反白後滑鼠移開按 tt → 譯反白內容，定位依選取框與滑鼠無關）。代碼走查確認：lastMouse 初始 {-1,-1} 哨兵（滑鼠未動不後備）、wordAtPoint 與雙擊共用同一 WORD_RE（英文單詞）、e.repeat/修飾鍵/輸入框排除均在觸發分支之前、有選取路徑（selectionRect 定位、1000 字上限）完全不變、mousemove 為 passive 僅更新內部變數
+- 真實 API：TC-R01~R03 SKIP——阿里雲回 InvalidAccessKeyId.NotFound（提供的 AK 無效/已失效，屬憑證環境問題非代碼缺陷；錯誤經 Code 非 200 路徑正確判錯並顯示具體訊息，另驗證 TC-A21 判錯路徑有效）
+- 結論：**PASS**（代碼層全過；真實 API 聯通待有效密鑰補測）
+- 遺留事項：提供有效阿里雲密鑰後補測 TC-R01~R03；觀察（低風險）：選取非文字物件（如圖片）時 selectionRect 非 null，若游標處恰有單詞則卡片錨定走選取框分支而非游標，觸發與翻譯正確性不受影響
